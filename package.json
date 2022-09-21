@@ -1,0 +1,29 @@
+{
+  "name": "zachran-jidlo-dodo-automation",
+  "version": "1.0.0",
+  "description": "The script handles automated orders creation using DODO public API based on data saved in private Zachran Jidlo's airtable",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "lint": "eslint . --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cesko-digital/zachran-jidlo-dodo-automation.git"
+  },
+  "author": "bc.josefjadrny@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cesko-digital/zachran-jidlo-dodo-automation/issues"
+  },
+  "homepage": "https://github.com/cesko-digital/zachran-jidlo-dodo-automation#readme",
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.38.0",
+    "@typescript-eslint/parser": "^5.38.0",
+    "eslint": "^8.23.1",
+    "typescript": "^4.8.3"
+  }
+}
