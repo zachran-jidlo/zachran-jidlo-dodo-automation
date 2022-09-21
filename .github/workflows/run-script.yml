@@ -1,7 +1,0 @@
-name: Run script
-on: [push]
-jobs:
-  lint:
-    runs-on: node:16-alpine
-    steps:
-      - run: npm run lint
