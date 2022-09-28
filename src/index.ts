@@ -1,1 +1,3 @@
-console.log('hello world!')
+import { sendOrders } from './sendOrders'
+
+sendOrders()
