@@ -1,20 +1,9 @@
-import * as dotenv from 'dotenv'
 import axios, { AxiosResponse, AxiosError } from 'axios'
-import { Array, Number, Record, String, Static, Literal } from 'runtypes'
-
-dotenv.config()
-const axiosAirtable = axios.create({
-  baseURL: 'https://api.airtable.com/v0/apppCzTfDnvgah1Z3/',
-  headers: { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY || ''}` }
-})
+import { Array, Number, Record, String, Static, Literal, Optional } from 'runtypes'
+import { axiosAirtable, AIRTABLES } from './../common'
 
 const DODO_OAUTH_URI = 'https://login.microsoftonline.com/1b9b966e-0ce7-44ed-a2df-83446c830a18/oauth2/v2.0/token'
 const DODO_ORDERS_API = 'http://api-staging.gaia.delivery/integrations/v2/zachran-jidlo/orders'
-const AIRTABLES = {
-  DONORS: 'Dárci',
-  CHARITIES: 'Příjemci',
-  ORDERS: 'Rozvozy'
-}
 
 const DodoTokenRT = Record({
   token_type: Literal('Bearer'),
@@ -65,7 +54,6 @@ const getDonors = async (): Promise<unknown> => {
     encodeURIComponent(AIRTABLES.DONORS),
     {
       params: {
-        maxRecords: 5000,
         view: 'Grid view'
       }
     }
@@ -78,7 +66,6 @@ const getCharities = async (): Promise<unknown> => {
     encodeURIComponent(AIRTABLES.CHARITIES),
     {
       params: {
-        maxRecords: 5000,
         view: 'Grid view'
       }
     }
@@ -103,7 +90,8 @@ const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>>
             'Vyzvednout od': order.pickupFrom.toISOString(),
             'Vyzvednout do': order.pickupTo.toISOString(),
             'Doručit od': order.deliverFrom.toISOString(),
-            'Doručit do': order.deliverTo.toISOString()
+            'Doručit do': order.deliverTo.toISOString(),
+            Status: 'čeká'
           }
         }
       ]
@@ -164,24 +152,7 @@ const getDateAfter7days = (addSeconds = 0): Date => {
   return date
 }
 
-export const sendOrders = async () => {
-  console.info(`Loading donors from "${AIRTABLES.DONORS}" table`)
-  const donorsResponse = await getDonors()
-  const { records: donorsData } = Record({ records: Array(Record({ id: String })) }).check(donorsResponse)
-  console.info(`Found ${donorsData.length} donor(s) in "${AIRTABLES.DONORS}" table`)
-
-  console.info(`Loading charities from "${AIRTABLES.CHARITIES}" table`)
-  const charitiesResponse = await getCharities()
-  const { records: charitiesData } = Record({ records: Array(Record({ id: String })) }).check(charitiesResponse)
-  console.info(`Found ${charitiesData.length} charit(y)ies in "${AIRTABLES.CHARITIES}" table`)
-  const charitiesMap = new Map()
-  charitiesData.forEach(charityData => { charitiesMap.set(charityData.id, charityData) })
-
-  console.info('Getting temporary DODO oauth token')
-  const dodoTokenResponse = await getDodoToken()
-  const dodoToken = DodoTokenRT.check(dodoTokenResponse)
-  console.info(`Successfully received temporary DODO oauth token (expires in ${dodoToken.expires_in}s)`)
-
+const handleOrders = async (donorsData: {id: string}[], charitiesMap: Map<string, unknown>, dodoToken: DodoToken): Promise<number> => {
   let handledOrdersCount = 0
   for (const donorData of donorsData) {
     try {
@@ -213,6 +184,35 @@ export const sendOrders = async () => {
     }
   }
 
-  if (!handledOrdersCount) throw new Error('No orders have been handled')
-  console.info(`Script finished, ${handledOrdersCount} order(s) have been handled`)
+  return handledOrdersCount
+}
+
+export const sendOrders = async () => {
+  try {
+    console.info(`Loading donors from "${AIRTABLES.DONORS}" table`)
+    const donorsResponse = await getDonors()
+    const { records: donorsData, offset } = Record({ records: Array(Record({ id: String })), offset: Optional(String) }).check(donorsResponse)
+    console.info(`Found ${donorsData.length} donor(s) in "${AIRTABLES.DONORS}" table`)
+    if (offset) console.warn(`More donors found with offset ${offset}, you should implement pagination`)
+
+    console.info(`Loading charities from "${AIRTABLES.CHARITIES}" table`)
+    const charitiesResponse = await getCharities()
+    const { records: charitiesData } = Record({ records: Array(Record({ id: String })) }).check(charitiesResponse)
+    console.info(`Found ${charitiesData.length} charit(y)ies in "${AIRTABLES.CHARITIES}" table`)
+    const charitiesMap = new Map()
+    charitiesData.forEach(charityData => { charitiesMap.set(charityData.id, charityData) })
+
+    console.info('Getting temporary DODO oauth token')
+    const dodoTokenResponse = await getDodoToken()
+    const dodoToken = DodoTokenRT.check(dodoTokenResponse)
+    console.info(`Successfully received temporary DODO oauth token (expires in ${dodoToken.expires_in}s)`)
+
+    const handledOrdersCount = await handleOrders(donorsData, charitiesMap, dodoToken)
+    if (!handledOrdersCount) throw new Error('No orders have been handled')
+
+    console.info(`Script finished, ${handledOrdersCount} order(s) have been handled`)
+  } catch (error) {
+    console.error('Script failed', error instanceof AxiosError ? error?.response?.data || error?.message : error)
+    process.exit(1)
+  }
 }
