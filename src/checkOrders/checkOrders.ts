@@ -1,6 +1,6 @@
-import { AxiosError } from 'axios'
-import { Array as ArrayRT, Record, String, Optional, Static, Literal } from 'runtypes'
-import { axiosAirtable, AIRTABLES } from './../common'
+import axios, { AxiosError, AxiosResponse } from 'axios'
+import { Array as ArrayRT, Record, String, Optional, Literal } from 'runtypes'
+import { axiosAirtable, AIRTABLES, DODO_ORDERS_API, DodoToken, getDodoToken, DodoTokenRT } from './../common'
 
 const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 60
 
@@ -14,7 +14,6 @@ const OrderRT = Record({
     Status: Literal('čeká')
   })
 })
-type Order = Static<typeof OrderRT>;
 
 const getOrders = async (): Promise<unknown> => {
   const { data } = await axiosAirtable.get(
@@ -59,27 +58,52 @@ const updateOrderStatus = async (orderId: string, confirmed = true): Promise<unk
   return data
 }
 
+const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): Promise<AxiosResponse<unknown>> => {
+  return await axios.put(
+    `${DODO_ORDERS_API}/${orderIdentification}/status`,
+    {
+      Status: 'Cancelled',
+      Reason: 'Delivery was not confirmed in time',
+      StatusChangeTime: new Date().toISOString()
+    },
+    {
+      headers: { Authorization: `Bearer ${token.access_token || ''}` },
+      timeout: 30000
+    }
+  )
+}
+
 const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
   let handledOrdersCount = 0
+  let dodoToken: null | DodoToken = null
   for (const orderData of ordersData) {
     try {
       console.info(`Handling order ${JSON.stringify(orderData)}`)
       const order = OrderRT.check(orderData)
-      console.info(`-> Searching order ${order.id} confirmation from "${AIRTABLES.OFFERS}" table`)
+      console.info(`-> Searching order ${order.fields.Identifikátor} confirmation from "${AIRTABLES.OFFERS}" table`)
       const confirmationData = await getConfirmation(order.fields.Dárce[0])
       const confirmation = Record({ records: ArrayRT(Record({})) }).check(confirmationData)
 
       if (confirmation.records.length) {
-        console.info(`-> Confirmation found for order ${order.id}: ${JSON.stringify(confirmation)}`)
+        console.info(`-> Confirmation found for order ${order.fields.Identifikátor}: ${JSON.stringify(confirmation)}`)
         await updateOrderStatus(order.id, true)
-        console.info(`-> Successfully confirmed order ${order.id}`)
+        console.info(`-> Successfully confirmed order ${order.fields.Identifikátor}`)
       } else {
-        console.info(`-> Confirmation NOT FOUND for order ${order.id}`)
+        console.info(`-> Confirmation NOT FOUND for order ${order.fields.Identifikátor}`)
         const pickupFrom = new Date(order.fields['Vyzvednout od'])
         const latestConfirmationDate = new Date(new Date().setTime(pickupFrom.getTime() - (ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP * 1000 * 60)))
         if (new Date() > latestConfirmationDate) {
-          console.warn(`-> Canceling delivery for order ${order.id}. Latest time for confirmation ${latestConfirmationDate.toLocaleString('cs')} passed.`)
+          if (!dodoToken) {
+            console.info('Getting temporary DODO oauth token')
+            const dodoTokenResponse = await getDodoToken()
+            dodoToken = DodoTokenRT.check(dodoTokenResponse)
+            console.info(`Successfully received temporary DODO oauth token (expires in ${dodoToken.expires_in}s)`)
+          }
+
+          console.warn(`-> Canceling delivery for order ${order.fields.Identifikátor}. Latest time for confirmation ${latestConfirmationDate.toLocaleString('cs')} passed.`)
+          await cancelDodoOrder(order.fields.Identifikátor, dodoToken)
           await updateOrderStatus(order.id, false)
+          console.info(`-> Successfully canceled order ${order.fields.Identifikátor}`)
         }
       }
 

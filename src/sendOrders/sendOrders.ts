@@ -1,17 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from 'axios'
-import { Array, Number, Record, String, Static, Literal, Optional } from 'runtypes'
-import { axiosAirtable, AIRTABLES } from './../common'
-
-const DODO_OAUTH_URI = 'https://login.microsoftonline.com/1b9b966e-0ce7-44ed-a2df-83446c830a18/oauth2/v2.0/token'
-const DODO_ORDERS_API = 'http://api-staging.gaia.delivery/integrations/v2/zachran-jidlo/orders'
-
-const DodoTokenRT = Record({
-  token_type: Literal('Bearer'),
-  expires_in: Number,
-  ext_expires_in: Number,
-  access_token: String
-})
-type DodoToken = Static<typeof DodoTokenRT>;
+import { Array, Number, Record, String, Static, Optional } from 'runtypes'
+import { axiosAirtable, AIRTABLES, DODO_ORDERS_API, DodoToken, DodoTokenRT, getDodoToken } from './../common'
 
 const DonorRT = Record({
   id: String,
@@ -97,20 +86,6 @@ const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>>
       ]
     }
   )
-}
-
-const getDodoToken = async (): Promise<unknown> => {
-  const params = new URLSearchParams()
-  params.append('grant_type', 'client_credentials')
-  params.append('scope', '6add48c5-cf9d-4e7b-88dd-a59a6c57c22e/.default')
-  params.append('client_id', process.env.DODO_CLIENT_ID || '')
-  params.append('client_secret', process.env.DODO_CLIENT_SECRET || '')
-
-  const { data } = await axios.post(
-    DODO_OAUTH_URI,
-    params
-  )
-  return data
 }
 
 const createOrder = async (order: Order, token: DodoToken): Promise<AxiosResponse<unknown>> => {
