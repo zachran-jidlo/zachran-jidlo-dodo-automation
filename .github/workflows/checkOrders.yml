@@ -8,7 +8,7 @@ on:
 
 
 jobs:
-  test:
+  check:
 
     runs-on: ubuntu-latest
 

@@ -8,7 +8,7 @@ on:
 
 
 jobs:
-  test:
+  send:
 
     runs-on: ubuntu-latest
 
