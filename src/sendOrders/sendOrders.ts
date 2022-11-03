@@ -43,7 +43,8 @@ const getDonors = async (): Promise<unknown> => {
     encodeURIComponent(AIRTABLES.DONORS),
     {
       params: {
-        view: 'Grid view'
+        view: 'Grid view',
+        filterByFormula: '{Osobní odběr}=FALSE()'
       }
     }
   )
