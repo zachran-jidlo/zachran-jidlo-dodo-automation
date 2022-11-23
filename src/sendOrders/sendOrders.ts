@@ -1,6 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from 'axios'
 import { Array, Number, Record, String, Static, Optional } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DODO_ORDERS_API, DodoToken, DodoTokenRT, getDodoToken } from './../common'
+import { axiosAirtable, AIRTABLES, DodoToken, DodoTokenRT, getDodoToken } from './../common'
 
 const DonorRT = Record({
   id: String,
@@ -91,7 +91,7 @@ const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>>
 
 const createOrder = async (order: Order, token: DodoToken): Promise<AxiosResponse<unknown>> => {
   return await axios.post(
-    DODO_ORDERS_API,
+    process.env.DODO_ORDERS_API || '',
     {
       Identifier: order.id,
       Pickup: {

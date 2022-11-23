@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import { Array as ArrayRT, Record, String, Optional, Literal } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DODO_ORDERS_API, DodoToken, getDodoToken, DodoTokenRT } from './../common'
+import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT } from './../common'
 
 const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 60
 
@@ -60,7 +60,7 @@ const updateOrderStatus = async (orderId: string, confirmed = true): Promise<unk
 
 const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): Promise<AxiosResponse<unknown>> => {
   return await axios.put(
-    `${DODO_ORDERS_API}/${orderIdentification}/status`,
+    `${process.env.DODO_ORDERS_API}/${orderIdentification}/status`,
     {
       Status: 'Cancelled',
       Reason: 'Delivery was not confirmed in time',

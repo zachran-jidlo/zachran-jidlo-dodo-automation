@@ -31,4 +31,7 @@ There are some secrets required. You can create `.env` file in the root folder.
 AIRTABLE_API_KEY="key" // You can find this key in your Airtable profile
 DODO_CLIENT_ID="client" // Ask someone from DODO/Zachran jidlo for this one
 DODO_CLIENT_SECRET="secret" // Ask someone from DODO/Zachran jidlo for this one
+DODO_SCOPE="scope" // Ask someone from DODO/Zachran jidlo for this one
+DODO_OAUTH_URI="oauth" // Ask someone from DODO/Zachran jidlo for this one
+DODO_ORDERS_API="api" // Ask someone from DODO/Zachran jidlo for this one
 ```
