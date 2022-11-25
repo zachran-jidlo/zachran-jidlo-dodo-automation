@@ -22,6 +22,17 @@ export const DodoTokenRT = Record({
   access_token: String
 })
 
+const EnvVariablesRT = Record({
+  AIRTABLE_API_KEY: String,
+  DODO_SCOPE: String,
+  DODO_CLIENT_ID: String,
+  DODO_CLIENT_SECRET: String,
+  DODO_OAUTH_URI: String,
+  DODO_ORDERS_API: String
+})
+
+EnvVariablesRT.check(process.env)
+
 export type DodoToken = Static<typeof DodoTokenRT>;
 
 export const getDodoToken = async (): Promise<unknown> => {
