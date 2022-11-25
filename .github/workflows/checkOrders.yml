@@ -25,5 +25,8 @@ jobs:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           DODO_CLIENT_ID: ${{ secrets.DODO_CLIENT_ID }}
           DODO_CLIENT_SECRET: ${{ secrets.DODO_CLIENT_SECRET }}
+          DODO_OAUTH_URI: ${{ secrets.DODO_OAUTH_URI }}
+          DODO_SCOPE: ${{ secrets.DODO_SCOPE }}
+          DODO_ORDERS_API: ${{ secrets.DODO_ORDERS_API }}
         run: npm run start:check 
         
