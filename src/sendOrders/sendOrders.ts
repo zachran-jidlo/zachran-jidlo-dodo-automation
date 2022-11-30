@@ -189,5 +189,3 @@ export const sendOrders = async () => {
     process.exit(1)
   }
 }
-
-console.log(getDateAfter7days(50400))
