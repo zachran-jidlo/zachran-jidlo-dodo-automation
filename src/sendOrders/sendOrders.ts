@@ -118,12 +118,9 @@ const createOrder = async (order: Order, token: DodoToken): Promise<AxiosRespons
 const getDateAfter7days = (addSeconds = 0): Date => {
   const date = new Date()
   date.setDate(date.getDate() + 7)
-  date.setMilliseconds(0)
-  date.setSeconds(0)
-  date.setMinutes(0)
-  date.setHours(0)
-
-  date.setSeconds(addSeconds)
+  date.setUTCHours(0, 0, 0, 0)
+  date.setUTCMinutes(date.getTimezoneOffset())
+  date.setUTCSeconds(addSeconds)
 
   return date
 }
@@ -148,7 +145,7 @@ const handleOrders = async (donorsData: {id: string}[], charitiesMap: Map<string
 
         }
 
-        console.info(`-> Creating order ${order.id} on DODO`)
+        console.info(`-> Creating order ${JSON.stringify(order)} on DODO`)
         await createOrder(order, dodoToken)
 
         console.info(`-> Adding order ${order.id} to ${AIRTABLES.ORDERS} table`)
@@ -192,3 +189,5 @@ export const sendOrders = async () => {
     process.exit(1)
   }
 }
+
+console.log(getDateAfter7days(50400))
