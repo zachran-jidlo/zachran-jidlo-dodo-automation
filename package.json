@@ -4,8 +4,8 @@
   "description": "The script handles automated orders creation using DODO public API based on data saved in private Zachran Jidlo's airtable",
   "main": "src/index.ts",
   "scripts": {
-    "start:send": "ts-node src/sendOrders/index.ts",
-    "start:check": "ts-node src/checkOrders/index.ts",
+    "start:send": "env TZ='Europe/Prague' ts-node src/sendOrders/index.ts",
+    "start:check": "env TZ='Europe/Prague' ts-node src/checkOrders/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint --fix . --ext .ts"
   },
