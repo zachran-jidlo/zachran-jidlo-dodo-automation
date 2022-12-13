@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 import { Array as ArrayRT, Record, String, Optional, Literal } from 'runtypes'
 import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT } from './../common'
 
-const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 60
+const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 50
 
 const OrderRT = Record({
   id: String,
