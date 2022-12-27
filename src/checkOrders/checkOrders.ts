@@ -60,7 +60,7 @@ const updateOrderStatus = async (orderId: string, confirmed = true): Promise<unk
 
 const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): Promise<AxiosResponse<unknown>> => {
   return await axios.put(
-    `${process.env.DODO_ORDERS_API}/${orderIdentification}/status`,
+    `${process.env.DODO_ORDERS_API}/${encodeURIComponent(orderIdentification)}/status`,
     {
       Status: 'Cancelled',
       Reason: 'Delivery was not confirmed in time',
