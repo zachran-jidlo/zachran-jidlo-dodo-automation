@@ -12,7 +12,8 @@ const DonorRT = Record({
     'Doručit od': Number, // 50800
     'Doručit do': Number, // 60800
     'Odpovědná osoba': String, // Anna Strejcová
-    Příjemce: Array(String) // ["rec8116cdd76088af"]
+    Příjemce: Array(String), // ["rec8116cdd76088af"]
+    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
   })
 })
 type Donor = Static<typeof DonorRT>;
@@ -23,7 +24,8 @@ const CharityRT = Record({
     ID: String, // "Charita 1"
     'Telefonní číslo': String, // +420123999888
     'Odpovědná osoba': String, // Anna Strejcová
-    Adresa: String // Spojená 22, Praha 3, 130000
+    Adresa: String, // Spojená 22, Praha 3, 130000
+    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
   })
 })
 type Charity = Static<typeof CharityRT>;
@@ -33,9 +35,11 @@ type Order = {
   donor: Donor,
   charity: Charity,
   pickupFrom: Date,
-  pickupTo: Date,
+  pickupTo: Date
+  pickupNote: string,
   deliverFrom: Date,
-  deliverTo: Date
+  deliverTo: Date,
+  deliverNote: string,
 }
 
 const getDonors = async (): Promise<unknown> => {
@@ -97,12 +101,14 @@ const createOrder = async (order: Order, token: DodoToken): Promise<AxiosRespons
       Pickup: {
         BranchIdentifier: order.donor.fields.ID,
         RequiredStart: order.pickupFrom.toISOString(),
-        RequiredEnd: order.pickupTo.toISOString()
+        RequiredEnd: order.pickupTo.toISOString(),
+        Note: order.pickupNote
       },
       Drop: {
         AddressRawValue: order.charity.fields.Adresa, // Valid Order address
         RequiredStart: order.deliverFrom.toISOString(),
-        RequiredEnd: order.deliverTo.toISOString()
+        RequiredEnd: order.deliverTo.toISOString(),
+        Note: order.deliverNote
       },
       CustomerName: order.charity.fields['Odpovědná osoba'],
       CustomerPhone: order.charity.fields['Telefonní číslo'],
@@ -140,9 +146,10 @@ const handleOrders = async (donorsData: {id: string}[], charitiesMap: Map<string
           charity,
           pickupTo: getDateAfter7days(donor.fields['Vyzvednout do']),
           pickupFrom: getDateAfter7days(donor.fields['Vyzvednout od']),
+          pickupNote: donor.fields['Poznámka'] || '',
           deliverTo: getDateAfter7days(donor.fields['Doručit do']),
-          deliverFrom: getDateAfter7days(donor.fields['Doručit od'])
-
+          deliverFrom: getDateAfter7days(donor.fields['Doručit od']),
+          deliverNote: charity.fields['Poznámka'] || ''
         }
 
         console.info(`-> Creating order ${JSON.stringify(order)} on DODO`)
