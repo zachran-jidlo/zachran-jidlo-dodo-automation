@@ -21,7 +21,7 @@ type Donor = Static<typeof DonorRT>;
 const CharityRT = Record({
   id: String,
   fields: Record({
-    ID: String, // "Charita 1"
+    Název: String, // "Charita 1"
     'Telefonní číslo': String, // +420123999888
     'Odpovědná osoba': String, // Anna Strejcová
     Adresa: String, // Spojená 22, Praha 3, 130000
@@ -141,7 +141,7 @@ const handleOrders = async (donorsData: {id: string}[], charitiesMap: Map<string
         const charity = CharityRT.check(charitiesMap.get(charityId))
 
         const order: Order = {
-          id: `${donor.fields.ID}-${charity.fields.ID}-${getDateAfter7days().toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
+          id: `${donor.fields.ID}-${charity.fields.Název}-${getDateAfter7days().toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
           donor,
           charity,
           pickupTo: getDateAfter7days(donor.fields['Vyzvednout do']),
