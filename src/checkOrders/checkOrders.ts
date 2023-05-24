@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
-import { Array as ArrayRT, Record, String, Optional, Literal } from 'runtypes'
+import { Array as ArrayRT, Record, String, Optional, Literal, Boolean } from 'runtypes'
 import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT } from './../common'
 
 const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 35
@@ -12,6 +12,13 @@ const OrderRT = Record({
     Příjemce: ArrayRT(String), // ["rec8116cdd76088af"]
     'Vyzvednout od': String, // "2022-10-06T12:30:00.000Z"
     Status: Literal('čeká')
+  })
+})
+
+const ConfirmationRT = Record({
+  id: String,
+  fields: Record({
+    'Svoz krabiček': Optional(Boolean)
   })
 })
 
@@ -73,6 +80,10 @@ const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): P
   )
 }
 
+const createOrderForPackages = () => {
+  return null
+}
+
 const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
   let handledOrdersCount = 0
   let dodoToken: null | DodoToken = null
@@ -82,10 +93,13 @@ const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
       const order = OrderRT.check(orderData)
       console.info(`-> Searching order ${order.fields.Identifikátor} confirmation from "${AIRTABLES.OFFERS}" table`)
       const confirmationData = await getConfirmation(order.fields.Dárce[0])
-      const confirmation = Record({ records: ArrayRT(Record({})) }).check(confirmationData)
+      const confirmation = Record({ records: ArrayRT(ConfirmationRT) }).check(confirmationData)
 
       if (confirmation.records.length) {
         console.info(`-> Confirmation found for order ${order.fields.Identifikátor}: ${JSON.stringify(confirmation)}`)
+        if (confirmation.records[0].fields['Svoz krabiček']) {
+          console.info(`-> Creating new order for packages delivery for order ${order.fields.Identifikátor}`)
+        }
         await updateOrderStatus(order.id, true)
         console.info(`-> Successfully confirmed order ${order.fields.Identifikátor}`)
       } else {
