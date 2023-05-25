@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
-import { Array as ArrayRT, Record, String, Optional, Literal, Boolean } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT } from './../common'
+import { Array as ArrayRT, Record, String, Optional, Literal, Boolean, Static } from 'runtypes'
+import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT, DODOOrder, DonorRT, CharityRT } from './../common'
 
 const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 35
 
@@ -14,6 +14,7 @@ const OrderRT = Record({
     Status: Literal('čeká')
   })
 })
+type Order = Static<typeof OrderRT>;
 
 const ConfirmationRT = Record({
   id: String,
@@ -29,6 +30,32 @@ const getOrders = async (): Promise<unknown> => {
       params: {
         filterByFormula: 'AND(IS_SAME({Vyzvednout od},TODAY(),"day"),{Status}="čeká")',
         view: 'Grid view'
+      }
+    }
+  )
+  return data
+}
+
+const getDonor = async (donorId: string): Promise<unknown> => {
+  const { data } = await axiosAirtable.get(
+    encodeURIComponent(AIRTABLES.DONORS),
+    {
+      params: {
+        view: 'Grid view',
+        filterByFormula: `{ID}=${donorId}`
+      }
+    }
+  )
+  return data
+}
+
+const getCharity = async (charityId: string): Promise<unknown> => {
+  const { data } = await axiosAirtable.get(
+    encodeURIComponent(AIRTABLES.CHARITIES),
+    {
+      params: {
+        view: 'Grid view',
+        filterByFormula: `{ID}=${charityId}`
       }
     }
   )
@@ -80,7 +107,32 @@ const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): P
   )
 }
 
-const createOrderForPackages = () => {
+const createOrderForPackages = async (order: Order) => {
+  const donorData = await getDonor(order.fields.Dárce[0])
+  const donor = DonorRT.check(donorData)
+
+  const charityData = await getCharity(order.fields.Příjemce[0])
+  const charity = CharityRT.check(charityData)
+
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const newOrder: DODOOrder = {
+    id: `${charity.fields.ID}-${donor.fields.ID}-${tomorrow.toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
+    pickupDodoId: charity.fields.ID,
+    pickupAirtableId: charity.id,
+    pickupTo: tomorrow,
+    pickupFrom: tomorrow,
+    pickupNote: 'Vyzvednutí REkrabiček',
+    deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
+    deliverAirtableId: donor.id,
+    deliverTo: tomorrow,
+    deliverFrom: tomorrow,
+    deliverNote: 'Doručení REkrabiček',
+    customerName: donor.fields['Odpovědná osoba'],
+    customerPhone: donor.fields['Telefonní číslo']
+  }
+
   return null
 }
 
@@ -99,6 +151,7 @@ const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
         console.info(`-> Confirmation found for order ${order.fields.Identifikátor}: ${JSON.stringify(confirmation)}`)
         if (confirmation.records[0].fields['Svoz krabiček']) {
           console.info(`-> Creating new order for packages delivery for order ${order.fields.Identifikátor}`)
+          await createOrderForPackages(order)
         }
         await updateOrderStatus(order.id, true)
         console.info(`-> Successfully confirmed order ${order.fields.Identifikátor}`)

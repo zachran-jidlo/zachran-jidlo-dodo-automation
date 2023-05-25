@@ -1,46 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from 'axios'
-import { Array, Number, Record, String, Static, Optional } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DodoToken, DodoTokenRT, getDodoToken } from './../common'
-
-const DonorRT = Record({
-  id: String,
-  fields: Record({
-    ID: String, // "Zachraň jídlo"
-    'Telefonní číslo': String, // +420123999888
-    'Vyzvednout od': Number, // 50400
-    'Vyzvednout do': Number, // 30000
-    'Doručit od': Number, // 50800
-    'Doručit do': Number, // 60800
-    'Odpovědná osoba': String, // Anna Strejcová
-    Příjemce: Array(String), // ["rec8116cdd76088af"]
-    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
-  })
-})
-type Donor = Static<typeof DonorRT>;
-
-const CharityRT = Record({
-  id: String,
-  fields: Record({
-    Název: String, // "Charita 1"
-    'Telefonní číslo': String, // +420123999888
-    'Odpovědná osoba': String, // Anna Strejcová
-    Adresa: String, // Spojená 22, Praha 3, 130000
-    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
-  })
-})
-type Charity = Static<typeof CharityRT>;
-
-type Order = {
-  id: string,
-  donor: Donor,
-  charity: Charity,
-  pickupFrom: Date,
-  pickupTo: Date
-  pickupNote: string,
-  deliverFrom: Date,
-  deliverTo: Date,
-  deliverNote: string,
-}
+import { Array, Record, String, Optional } from 'runtypes'
+import { axiosAirtable, AIRTABLES, DodoToken, DodoTokenRT, getDodoToken, DODOOrder, DonorRT, CharityRT } from './../common'
 
 const getDonors = async (): Promise<unknown> => {
   const { data } = await axiosAirtable.get(
@@ -67,7 +27,7 @@ const getCharities = async (): Promise<unknown> => {
   return data
 }
 
-const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>> => {
+const addOrderToAirtable = async (order: DODOOrder): Promise<AxiosResponse<unknown>> => {
   return await axiosAirtable.post(
     encodeURIComponent(AIRTABLES.ORDERS),
     {
@@ -76,10 +36,10 @@ const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>>
           fields: {
             Identifikátor: order.id,
             Dárce: [
-              order.donor.id
+              order.pickupAirtableId
             ],
             Příjemce: [
-              order.charity.id
+              order.deliverAirtableId
             ],
             'Vyzvednout od': order.pickupFrom.toISOString(),
             'Vyzvednout do': order.pickupTo.toISOString(),
@@ -93,25 +53,25 @@ const addOrderToAirtable = async (order: Order): Promise<AxiosResponse<unknown>>
   )
 }
 
-const createOrder = async (order: Order, token: DodoToken): Promise<AxiosResponse<unknown>> => {
+const createOrder = async (order: DODOOrder, token: DodoToken): Promise<AxiosResponse<unknown>> => {
   return await axios.post(
     process.env.DODO_ORDERS_API || '',
     {
       Identifier: order.id,
       Pickup: {
-        BranchIdentifier: order.donor.fields.ID,
+        BranchIdentifier: order.pickupDodoId,
         RequiredStart: order.pickupFrom.toISOString(),
         RequiredEnd: order.pickupTo.toISOString(),
         Note: order.pickupNote
       },
       Drop: {
-        AddressRawValue: order.charity.fields.Adresa, // Valid Order address
+        AddressRawValue: order.deliverAddress, // Valid Order address
         RequiredStart: order.deliverFrom.toISOString(),
         RequiredEnd: order.deliverTo.toISOString(),
         Note: order.deliverNote
       },
-      CustomerName: order.charity.fields['Odpovědná osoba'],
-      CustomerPhone: order.charity.fields['Telefonní číslo'],
+      CustomerName: order.customerName,
+      CustomerPhone: order.customerPhone,
       Price: 0
     },
     {
@@ -140,16 +100,20 @@ const handleOrders = async (donorsData: {id: string}[], charitiesMap: Map<string
       for (const charityId of donor.fields.Příjemce) {
         const charity = CharityRT.check(charitiesMap.get(charityId))
 
-        const order: Order = {
+        const order: DODOOrder = {
           id: `${donor.fields.ID}-${charity.fields.Název}-${getDateAfter7days().toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
-          donor,
-          charity,
+          pickupDodoId: donor.fields.ID,
+          pickupAirtableId: donor.id,
           pickupTo: getDateAfter7days(donor.fields['Vyzvednout do']),
           pickupFrom: getDateAfter7days(donor.fields['Vyzvednout od']),
           pickupNote: donor.fields['Poznámka'] || '',
+          deliverAddress: `${charity.fields.Adresa}${charity.fields.Oblast ? ' ' + charity.fields.Oblast : ''}`,
+          deliverAirtableId: charity.id,
           deliverTo: getDateAfter7days(donor.fields['Doručit do']),
           deliverFrom: getDateAfter7days(donor.fields['Doručit od']),
-          deliverNote: charity.fields['Poznámka'] || ''
+          deliverNote: charity.fields['Poznámka'] || '',
+          customerName: charity.fields['Odpovědná osoba'],
+          customerPhone: charity.fields['Telefonní číslo']
         }
 
         console.info(`-> Creating order ${JSON.stringify(order)} on DODO`)

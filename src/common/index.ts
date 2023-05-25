@@ -1,6 +1,6 @@
 import axios from 'axios'
 import * as dotenv from 'dotenv'
-import { Number, Record, String, Static, Literal } from 'runtypes'
+import { Number, Record, String, Static, Literal, Optional, Array } from 'runtypes'
 dotenv.config()
 
 export const axiosAirtable = axios.create({
@@ -29,6 +29,52 @@ const EnvVariablesRT = Record({
   DODO_CLIENT_SECRET: String,
   DODO_OAUTH_URI: String,
   DODO_ORDERS_API: String
+})
+
+export type DODOOrder = {
+  id: string,
+  pickupDodoId: string,
+  pickupAirtableId: string,
+  pickupFrom: Date,
+  pickupTo: Date
+  pickupNote: string,
+  deliverAirtableId: string,
+  deliverAddress: string,
+  deliverFrom: Date,
+  deliverTo: Date,
+  deliverNote: string,
+  customerName: string,
+  customerPhone:string
+}
+
+export const DonorRT = Record({
+  id: String,
+  fields: Record({
+    ID: String, // "Zachraň jídlo"
+    'Telefonní číslo': String, // +420123999888
+    'Vyzvednout od': Number, // 50400
+    'Vyzvednout do': Number, // 30000
+    'Doručit od': Number, // 50800
+    'Doručit do': Number, // 60800
+    'Odpovědná osoba': String, // Anna Strejcová
+    Adresa: String, // Spojená 22
+    Oblast: Optional(String), // Praha 3
+    Příjemce: Array(String), // ["rec8116cdd76088af"]
+    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
+  })
+})
+
+export const CharityRT = Record({
+  id: String,
+  fields: Record({
+    Název: String, // "Charita 1"
+    ID: String, // "zj-ad-zizkov"
+    'Telefonní číslo': String, // +420123999888
+    'Odpovědná osoba': String, // Anna Strejcová
+    Adresa: String, // Spojená 22, Praha 3, 130000
+    Oblast: Optional(String), // Praha 3
+    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
+  })
 })
 
 EnvVariablesRT.check(process.env)
