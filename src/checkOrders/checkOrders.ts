@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import { Array as ArrayRT, Record, String, Optional, Literal, Boolean, Static } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT, DODOOrder, DonorRT, CharityRT } from './../common'
+import { axiosAirtable, AIRTABLES, DodoToken, getDodoToken, DodoTokenRT, DODOOrder, DonorRT, CharityRT, createOrder, addOrderToAirtable } from './../common'
 
 const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 35
 
@@ -42,11 +42,11 @@ const getDonor = async (donorId: string): Promise<unknown> => {
     {
       params: {
         view: 'Grid view',
-        filterByFormula: `{ID}=${donorId}`
+        filterByFormula: `RECORD_ID()="${donorId}"`
       }
     }
   )
-  return data
+  return data.records[0]
 }
 
 const getCharity = async (charityId: string): Promise<unknown> => {
@@ -55,11 +55,11 @@ const getCharity = async (charityId: string): Promise<unknown> => {
     {
       params: {
         view: 'Grid view',
-        filterByFormula: `{ID}=${charityId}`
+        filterByFormula: `RECORD_ID()="${charityId}"`
       }
     }
   )
-  return data
+  return data.records[0]
 }
 
 const getConfirmation = async (donorId: string): Promise<unknown> => {
@@ -107,30 +107,49 @@ const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): P
   )
 }
 
-const createOrderForPackages = async (order: Order) => {
-  const donorData = await getDonor(order.fields.Dárce[0])
-  const donor = DonorRT.check(donorData)
-
-  const charityData = await getCharity(order.fields.Příjemce[0])
-  const charity = CharityRT.check(charityData)
-
+const getTomorrowDate = (hours: number, minutes: number): Date => {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(hours)
+  tomorrow.setMinutes(minutes);
+  tomorrow.setSeconds(0);
+  tomorrow.setMilliseconds(0);
 
-  const newOrder: DODOOrder = {
-    id: `${charity.fields.ID}-${donor.fields.ID}-${tomorrow.toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
-    pickupDodoId: charity.fields.ID,
-    pickupAirtableId: charity.id,
-    pickupTo: tomorrow,
-    pickupFrom: tomorrow,
-    pickupNote: 'Vyzvednutí REkrabiček',
-    deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
-    deliverAirtableId: donor.id,
-    deliverTo: tomorrow,
-    deliverFrom: tomorrow,
-    deliverNote: 'Doručení REkrabiček',
-    customerName: donor.fields['Odpovědná osoba'],
-    customerPhone: donor.fields['Telefonní číslo']
+  return tomorrow;
+}
+
+const createOrderForPackages = async (order: Order) => {
+  try {
+    const donorData = await getDonor(order.fields.Dárce[0])
+    const donor = DonorRT.check(donorData)
+
+    const charityData = await getCharity(order.fields.Příjemce[0])
+    const charity = CharityRT.check(charityData)
+
+    const newOrder: DODOOrder = {
+      id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(8,0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
+      pickupDodoId: charity.fields.ID,
+      pickupAirtableId: charity.id,
+      pickupFrom: getTomorrowDate(8,0),
+      pickupTo: getTomorrowDate(8,30),
+      pickupNote: 'Vyzvednutí REkrabiček',
+      deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
+      deliverAirtableId: donor.id,
+      deliverFrom: getTomorrowDate(9,0),
+      deliverTo: getTomorrowDate(9,30),
+      deliverNote: 'Doručení REkrabiček',
+      customerName: donor.fields['Odpovědná osoba'],
+      customerPhone: donor.fields['Telefonní číslo']
+    }
+
+    const dodoTokenResponse = await getDodoToken()
+    const dodoToken = DodoTokenRT.check(dodoTokenResponse)
+
+    await createOrder(newOrder, dodoToken)
+
+    await addOrderToAirtable(newOrder, 'krabičky')
+  } catch(error) {
+    console.error('Failed creating packages order', error instanceof AxiosError ? error?.response?.data || error?.message : error)
   }
 
   return null

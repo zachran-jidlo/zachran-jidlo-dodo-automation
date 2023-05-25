@@ -1,6 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from 'axios'
 import { Array, Record, String, Optional } from 'runtypes'
-import { axiosAirtable, AIRTABLES, DodoToken, DodoTokenRT, getDodoToken, DODOOrder, DonorRT, CharityRT } from './../common'
+import { axiosAirtable, AIRTABLES, DodoToken, DodoTokenRT, getDodoToken, DODOOrder, DonorRT, CharityRT, createOrder, addOrderToAirtable } from './../common'
 
 const getDonors = async (): Promise<unknown> => {
   const { data } = await axiosAirtable.get(
@@ -25,60 +25,6 @@ const getCharities = async (): Promise<unknown> => {
     }
   )
   return data
-}
-
-const addOrderToAirtable = async (order: DODOOrder): Promise<AxiosResponse<unknown>> => {
-  return await axiosAirtable.post(
-    encodeURIComponent(AIRTABLES.ORDERS),
-    {
-      records: [
-        {
-          fields: {
-            Identifikátor: order.id,
-            Dárce: [
-              order.pickupAirtableId
-            ],
-            Příjemce: [
-              order.deliverAirtableId
-            ],
-            'Vyzvednout od': order.pickupFrom.toISOString(),
-            'Vyzvednout do': order.pickupTo.toISOString(),
-            'Doručit od': order.deliverFrom.toISOString(),
-            'Doručit do': order.deliverTo.toISOString(),
-            Status: 'čeká'
-          }
-        }
-      ]
-    }
-  )
-}
-
-const createOrder = async (order: DODOOrder, token: DodoToken): Promise<AxiosResponse<unknown>> => {
-  return await axios.post(
-    process.env.DODO_ORDERS_API || '',
-    {
-      Identifier: order.id,
-      Pickup: {
-        BranchIdentifier: order.pickupDodoId,
-        RequiredStart: order.pickupFrom.toISOString(),
-        RequiredEnd: order.pickupTo.toISOString(),
-        Note: order.pickupNote
-      },
-      Drop: {
-        AddressRawValue: order.deliverAddress, // Valid Order address
-        RequiredStart: order.deliverFrom.toISOString(),
-        RequiredEnd: order.deliverTo.toISOString(),
-        Note: order.deliverNote
-      },
-      CustomerName: order.customerName,
-      CustomerPhone: order.customerPhone,
-      Price: 0
-    },
-    {
-      headers: { Authorization: `Bearer ${token.access_token || ''}` },
-      timeout: 30000
-    }
-  )
 }
 
 const getDateAfter7days = (addSeconds = 0): Date => {

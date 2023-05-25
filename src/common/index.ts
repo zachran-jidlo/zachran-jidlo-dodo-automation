@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import * as dotenv from 'dotenv'
 import { Number, Record, String, Static, Literal, Optional, Array } from 'runtypes'
 dotenv.config()
@@ -93,4 +93,58 @@ export const getDodoToken = async (): Promise<unknown> => {
     params
   )
   return data
+}
+
+export const createOrder = async (order: DODOOrder, token: DodoToken): Promise<AxiosResponse<unknown>> => {
+  return await axios.post(
+    process.env.DODO_ORDERS_API || '',
+    {
+      Identifier: order.id,
+      Pickup: {
+        BranchIdentifier: order.pickupDodoId,
+        RequiredStart: order.pickupFrom.toISOString(),
+        RequiredEnd: order.pickupTo.toISOString(),
+        Note: order.pickupNote
+      },
+      Drop: {
+        AddressRawValue: order.deliverAddress, // Valid Order address
+        RequiredStart: order.deliverFrom.toISOString(),
+        RequiredEnd: order.deliverTo.toISOString(),
+        Note: order.deliverNote
+      },
+      CustomerName: order.customerName,
+      CustomerPhone: order.customerPhone,
+      Price: 0
+    },
+    {
+      headers: { Authorization: `Bearer ${token.access_token || ''}` },
+      timeout: 30000
+    }
+  )
+}
+
+export const addOrderToAirtable = async (order: DODOOrder, status: 'čeká' | 'storno' | 'krabičky' = 'čeká'): Promise<AxiosResponse<unknown>> => {
+  return await axiosAirtable.post(
+    encodeURIComponent(AIRTABLES.ORDERS),
+    {
+      records: [
+        {
+          fields: {
+            Identifikátor: order.id,
+            Dárce: [
+              order.pickupAirtableId
+            ],
+            Příjemce: [
+              order.deliverAirtableId
+            ],
+            'Vyzvednout od': order.pickupFrom.toISOString(),
+            'Vyzvednout do': order.pickupTo.toISOString(),
+            'Doručit od': order.deliverFrom.toISOString(),
+            'Doručit do': order.deliverTo.toISOString(),
+            Status: status
+          }
+        }
+      ]
+    }
+  )
 }
