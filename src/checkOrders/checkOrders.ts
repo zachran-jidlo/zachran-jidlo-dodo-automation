@@ -109,7 +109,7 @@ const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): P
 
 const getTomorrowDate = (hours: number, minutes: number): Date => {
   const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setDate(tomorrow.getDate() + (tomorrow.getDay() === 5 ? 3 : 1))
   tomorrow.setHours(hours)
   tomorrow.setMinutes(minutes)
   tomorrow.setSeconds(0)
@@ -131,16 +131,16 @@ const createOrderForPackages = async (order: Order) => {
     }
 
     const newOrder: DODOOrder = {
-      id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(8, 0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
+      id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(10, 0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
       pickupDodoId: charity.fields.ID,
       pickupAirtableId: charity.id,
-      pickupFrom: getTomorrowDate(8, 0),
-      pickupTo: getTomorrowDate(8, 30),
+      pickupFrom: getTomorrowDate(10, 0),
+      pickupTo: getTomorrowDate(10, 30),
       pickupNote: 'Vyzvednutí REkrabiček',
       deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
       deliverAirtableId: donor.id,
-      deliverFrom: getTomorrowDate(9, 0),
-      deliverTo: getTomorrowDate(9, 30),
+      deliverFrom: getTomorrowDate(11, 0),
+      deliverTo: getTomorrowDate(11, 30),
       deliverNote: 'Doručení REkrabiček',
       customerName: donor.fields['Odpovědná osoba'],
       customerPhone: donor.fields['Telefonní číslo']
