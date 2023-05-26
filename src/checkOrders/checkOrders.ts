@@ -111,11 +111,11 @@ const getTomorrowDate = (hours: number, minutes: number): Date => {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   tomorrow.setHours(hours)
-  tomorrow.setMinutes(minutes);
-  tomorrow.setSeconds(0);
-  tomorrow.setMilliseconds(0);
+  tomorrow.setMinutes(minutes)
+  tomorrow.setSeconds(0)
+  tomorrow.setMilliseconds(0)
 
-  return tomorrow;
+  return tomorrow
 }
 
 const createOrderForPackages = async (order: Order) => {
@@ -126,17 +126,21 @@ const createOrderForPackages = async (order: Order) => {
     const charityData = await getCharity(order.fields.Příjemce[0])
     const charity = CharityRT.check(charityData)
 
+    if (!charity.fields.ID) {
+      throw new Error(`DODO ID is missing for ${charity.fields.Název}`)
+    }
+
     const newOrder: DODOOrder = {
-      id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(8,0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
+      id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(8, 0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
       pickupDodoId: charity.fields.ID,
       pickupAirtableId: charity.id,
-      pickupFrom: getTomorrowDate(8,0),
-      pickupTo: getTomorrowDate(8,30),
+      pickupFrom: getTomorrowDate(8, 0),
+      pickupTo: getTomorrowDate(8, 30),
       pickupNote: 'Vyzvednutí REkrabiček',
       deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
       deliverAirtableId: donor.id,
-      deliverFrom: getTomorrowDate(9,0),
-      deliverTo: getTomorrowDate(9,30),
+      deliverFrom: getTomorrowDate(9, 0),
+      deliverTo: getTomorrowDate(9, 30),
       deliverNote: 'Doručení REkrabiček',
       customerName: donor.fields['Odpovědná osoba'],
       customerPhone: donor.fields['Telefonní číslo']
@@ -148,7 +152,7 @@ const createOrderForPackages = async (order: Order) => {
     await createOrder(newOrder, dodoToken)
 
     await addOrderToAirtable(newOrder, 'krabičky')
-  } catch(error) {
+  } catch (error) {
     console.error('Failed creating packages order', error instanceof AxiosError ? error?.response?.data || error?.message : error)
   }
 

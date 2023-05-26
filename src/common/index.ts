@@ -68,7 +68,7 @@ export const CharityRT = Record({
   id: String,
   fields: Record({
     Název: String, // "Charita 1"
-    ID: String, // "zj-ad-zizkov"
+    ID: Optional(String), // "zj-ad-zizkov"
     'Telefonní číslo': String, // +420123999888
     'Odpovědná osoba': String, // Anna Strejcová
     Adresa: String, // Spojená 22, Praha 3, 130000
