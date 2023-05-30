@@ -133,12 +133,12 @@ const createOrderForPackages = async (order: Order) => {
     const newOrder: DODOOrder = {
       id: `${charity.fields.ID}-${donor.fields.ID}-${getTomorrowDate(10, 0).toLocaleDateString('cs')}`.toLowerCase().replace(/ /g, ''),
       pickupDodoId: charity.fields.ID,
-      pickupAirtableId: charity.id,
+      pickupAirtableId: donor.id,
       pickupFrom: getTomorrowDate(10, 0),
       pickupTo: getTomorrowDate(10, 30),
       pickupNote: 'Vyzvednutí REkrabiček',
       deliverAddress: `${donor.fields.Adresa}${donor.fields.Oblast ? ' ' + donor.fields.Oblast : ''}`,
-      deliverAirtableId: donor.id,
+      deliverAirtableId: charity.id,
       deliverFrom: getTomorrowDate(11, 0),
       deliverTo: getTomorrowDate(11, 30),
       deliverNote: 'Doručení REkrabiček',
@@ -150,6 +150,7 @@ const createOrderForPackages = async (order: Order) => {
     const dodoToken = DodoTokenRT.check(dodoTokenResponse)
 
     await createOrder(newOrder, dodoToken)
+    console.info(`-> Created packages delivery order ${JSON.stringify(newOrder)} on DODO`)
 
     await addOrderToAirtable(newOrder, 'krabičky')
   } catch (error) {
