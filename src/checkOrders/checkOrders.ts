@@ -173,7 +173,7 @@ const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
 
       if (confirmation.records.length) {
         console.info(`-> Confirmation found for order ${order.fields.Identifikátor}: ${JSON.stringify(confirmation)}`)
-        if (confirmation.records[0].fields['Svoz krabiček']) {
+        if (confirmation.records.some(confirmation => confirmation.fields['Svoz krabiček'])) {
           console.info(`-> Creating new order for packages delivery for order ${order.fields.Identifikátor}`)
           await createOrderForPackages(order)
         }
