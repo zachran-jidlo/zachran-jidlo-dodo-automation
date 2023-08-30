@@ -6,6 +6,7 @@
   "scripts": {
     "start:send": "env TZ='Europe/Prague' ts-node src/sendOrders/index.ts",
     "start:check": "env TZ='Europe/Prague' ts-node src/checkOrders/index.ts",
+    "start:send:firebase": "env TZ='Europe/Prague' ts-node src/firebase/sendOrders/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint --fix . --ext .ts"
   },
@@ -27,6 +28,7 @@
     "airtable": "^0.11.5",
     "axios": "^0.27.2",
     "dotenv": "^16.0.2",
+    "firebase": "^10.3.0",
     "runtypes": "^6.6.0",
     "ts-node": "^10.9.1"
   },
