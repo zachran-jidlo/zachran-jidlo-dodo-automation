@@ -1,11 +1,20 @@
 import axios, { AxiosResponse } from 'axios'
 import * as dotenv from 'dotenv'
-import { Number, Record, String, Static, Literal, Optional, Array } from 'runtypes'
+import { Number, Record, String, Static, Literal, Optional } from 'runtypes'
 dotenv.config()
 
+export const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: 'zachran-obed.firebaseapp.com',
+  projectId: 'zachran-obed',
+  storageBucket: 'zachran-obed.appspot.com',
+  messagingSenderId: '925797833830',
+  appId: process.env.FIREBASE_APP_ID
+}
+
 export const COLLECTIONS = {
-  DONORS: 'donors',
-  CHARITIES: 'recipients',
+  DONORS: 'canteens',
+  CHARITIES: 'charities',
   ORDERS: 'deliveries',
   OFFERS: 'offeredFood'
 }
@@ -29,11 +38,11 @@ const EnvVariablesRT = Record({
 export type DODOOrder = {
   id: string,
   pickupDodoId: string,
-  pickupAirtableId: string,
+  pickupId: string,
   pickupFrom: Date,
   pickupTo: Date
   pickupNote: string,
-  deliverAirtableId: string,
+  deliverId: string,
   deliverAddress: string,
   deliverFrom: Date,
   deliverTo: Date,
@@ -43,33 +52,35 @@ export type DODOOrder = {
 }
 
 export const DonorRT = Record({
-  id: String,
-  fields: Record({
-    ID: String, // "Zachraň jídlo"
-    'Telefonní číslo': String, // +420123999888
-    'Vyzvednout od': Number, // 50400
-    'Vyzvednout do': Number, // 30000
-    'Doručit od': Number, // 50800
-    'Doručit do': Number, // 60800
-    'Odpovědná osoba': String, // Anna Strejcová
-    Adresa: String, // Spojená 22
-    Oblast: Optional(String), // Praha 3
-    Příjemce: Array(String), // ["rec8116cdd76088af"]
-    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
-  })
+  dodoId: String, // "zj-ad-zizkov"
+  establishmentId: String, // primirest-tanvald
+  establishmentName: String, // Rodinné centrum Maják
+  phone: String, // +420123999888
+  pickUpFrom: String, // 16:30
+  pickUpWithin: String, // 17:00
+  deliverFrom: String, // 17:30
+  deliverWithin: String, // 18:00
+  responsiblePerson: String, // Anna Strejcová
+  city: String, // Prague
+  street: String, // Spojená
+  houseNumber: String, // 866/63
+  postalCode: String, // 130 00
+  recipientId: String, // zj-cck-beroun
+  noteForDriver: Optional(String) // zajděte za roh a a zazvoňte na zvonek
 })
 
 export const CharityRT = Record({
-  id: String,
-  fields: Record({
-    Název: String, // "Charita 1"
-    ID: Optional(String), // "zj-ad-zizkov"
-    'Telefonní číslo': String, // +420123999888
-    'Odpovědná osoba': String, // Anna Strejcová
-    Adresa: String, // Spojená 22, Praha 3, 130000
-    Oblast: Optional(String), // Praha 3
-    Poznámka: Optional(String) // zajděte za roh a a zazvoňte na zvonek
-  })
+  dodoID: String, // "zj-ad-zizkov"
+  establishmentId: String, // primirest-tanvald
+  establishmentName: String, // "Charita 1"
+  phone: String, // +420123999888
+  responsiblePerson: String, // Anna Strejcová
+  city: String, // Prague
+  street: String, // Spojená
+  houseNumber: String, // 866/63
+  postalCode: String, // 130 00
+  noteForDriver: Optional(String) // zajděte za roh a a zazvoňte na zvonek
+
 })
 
 EnvVariablesRT.check(process.env)
