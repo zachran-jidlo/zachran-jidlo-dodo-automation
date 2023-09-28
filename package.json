@@ -7,6 +7,7 @@
     "start:send": "env TZ='Europe/Prague' ts-node src/sendOrders/index.ts",
     "start:check": "env TZ='Europe/Prague' ts-node src/checkOrders/index.ts",
     "start:send:firebase": "env TZ='Europe/Prague' ts-node src/firebase/sendOrders/index.ts",
+    "start:check:firebase": "env TZ='Europe/Prague' ts-node src/firebase/checkOrders/index.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint --fix . --ext .ts"
   },

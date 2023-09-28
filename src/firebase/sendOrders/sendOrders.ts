@@ -1,8 +1,8 @@
-import { initializeApp, FirebaseError } from 'firebase/app'
+import { initializeApp } from 'firebase/app'
 import { getFirestore, collection, getDocs, Firestore, setDoc, doc } from 'firebase/firestore/lite'
 import { COLLECTIONS, CharityRT, DODOOrder, DodoToken, DodoTokenRT, DonorRT, createOrder, firebaseConfig, getDodoToken } from '../common'
 import { Record as RecordRT, Array as ArrayRT, String as StringRT } from 'runtypes'
-import { AxiosError, AxiosResponse } from 'axios'
+import { logDebug, logError, logInfo } from '../common/logger'
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
@@ -114,16 +114,4 @@ const getDateAfter3days = (time = '00:00'): Date => {
   date.setUTCSeconds(0)
 
   return date
-}
-
-const logError = (message: string, error?: unknown) => {
-  console.error(`ERROR: ${message}`, error instanceof FirebaseError ? error?.message : error instanceof AxiosError ? error?.response?.data : error instanceof Error ? error.message : error)
-}
-
-const logInfo = (message: string) => {
-  console.info(`INFO: ${message}`)
-}
-
-const logDebug = (message: string) => {
-  console.info(`DEBUG: ${message}`)
 }
