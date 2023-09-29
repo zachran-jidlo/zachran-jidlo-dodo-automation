@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, collection, getDocs, Firestore, setDoc, doc } from 'firebase/firestore/lite'
-import { COLLECTIONS, CharityRT, DODOOrder, DodoToken, DodoTokenRT, DonorRT, createOrder, firebaseConfig, getDodoToken } from '../common'
+import { COLLECTIONS, CharityRT, DODOOrder, DodoToken, DodoTokenRT, DonorRT, OrderStatus, createOrder, firebaseConfig, getDodoToken } from '../common'
 import { Record as RecordRT, Array as ArrayRT, String as StringRT } from 'runtypes'
 import { logDebug, logError, logInfo } from '../common/logger'
 
@@ -78,7 +78,7 @@ const handleOrders = async (donorsData: {establishmentId: string}[], charitiesMa
   return handledOrdersCount
 }
 
-const saveOrderToFirabase = async (order: DODOOrder, status: 'čeká' | 'storno' = 'čeká'): Promise<void> => {
+const saveOrderToFirabase = async (order: DODOOrder, status: OrderStatus = OrderStatus.WAITING): Promise<void> => {
   const collectionRef = collection(db, COLLECTIONS.ORDERS)
   const docRef = doc(collectionRef)
   const documentUuid = docRef.id
@@ -92,9 +92,7 @@ const saveOrderToFirabase = async (order: DODOOrder, status: 'čeká' | 'storno'
       pickUpWithin: order.pickupTo.toISOString(),
       deliverFrom: order.deliverFrom.toISOString(),
       deliverWithin: order.deliverTo.toISOString(),
-      identifier: '2',
       state: status
-
     }
   )
 }

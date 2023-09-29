@@ -83,6 +83,12 @@ export const CharityRT = Record({
 
 })
 
+export enum OrderStatus {
+  WAITING = 'Čeká',
+  CONFIRMED = 'Potvrzeno',
+  CANCELED = 'Storno',
+}
+
 EnvVariablesRT.check(process.env)
 
 export type DodoToken = Static<typeof DodoTokenRT>;
