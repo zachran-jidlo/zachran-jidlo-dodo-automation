@@ -85,7 +85,7 @@ const saveOrderToFirabase = async (order: DODOOrder, status: OrderStatus = Order
 
   await setDoc(docRef,
     {
-      uuid: documentUuid,
+      identifier: documentUuid,
       recipientId: order.deliverId,
       donorId: order.pickupId,
       pickUpFrom: order.pickupFrom.toISOString(),
