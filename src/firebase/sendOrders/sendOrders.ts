@@ -81,11 +81,10 @@ const handleOrders = async (donorsData: {establishmentId: string}[], charitiesMa
 const saveOrderToFirabase = async (order: DODOOrder, status: OrderStatus = OrderStatus.WAITING): Promise<void> => {
   const collectionRef = collection(db, COLLECTIONS.ORDERS)
   const docRef = doc(collectionRef)
-  const documentUuid = docRef.id
 
   await setDoc(docRef,
     {
-      identifier: documentUuid,
+      identifier: order.id,
       recipientId: order.deliverId,
       donorId: order.pickupId,
       pickUpFrom: order.pickupFrom.toISOString(),

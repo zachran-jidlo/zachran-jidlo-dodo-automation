@@ -1,8 +1,11 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, getDocs, Firestore, setDoc, doc, query, where, Timestamp, DocumentReference } from 'firebase/firestore/lite'
+import { getFirestore, collection, getDocs, Firestore, setDoc, query, where, Timestamp, DocumentReference } from 'firebase/firestore/lite'
 import { Record as RecordRT, Array as ArrayRT, String as StringRT, Static as StaticRT, Literal as LiteralRT, InstanceOf as InstanceOfRT } from 'runtypes'
-import { COLLECTIONS, DodoToken, OrderStatus, firebaseConfig } from '../common'
-import { logError, logInfo } from '../common/logger'
+import { COLLECTIONS, DodoToken, DodoTokenRT, OrderStatus, firebaseConfig, getDodoToken } from '../common'
+import { logError, logInfo, logWarn } from '../common/logger'
+import axios, { AxiosResponse } from 'axios'
+
+const ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP = 35
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
@@ -44,7 +47,7 @@ export const checkOrders = async () => {
 
 const handleOrders = async (ordersData: {identifier: string}[]): Promise<number> => {
   let handledOrdersCount = 0
-  const dodoToken: null | DodoToken = null
+  let dodoToken: null | DodoToken = null
   for (const orderData of ordersData) {
     try {
       logInfo(`Handling order ${JSON.stringify(orderData)}`)
@@ -59,6 +62,21 @@ const handleOrders = async (ordersData: {identifier: string}[]): Promise<number>
         logInfo(`-> Successfully confirmed order ${order.identifier}`)
       } else {
         logInfo(`-> Confirmation NOT FOUND for order ${order.identifier}`)
+        const pickupFrom = new Date(order.pickUpFrom.toDate())
+        const latestConfirmationDate = new Date(new Date().setTime(pickupFrom.getTime() - (ORDER_MUST_BE_CONFIRMED_MINUTES_BEFORE_PICKUP * 1000 * 60)))
+        if (new Date() > latestConfirmationDate) {
+          if (!dodoToken) {
+            logInfo('Getting temporary DODO oauth token')
+            const dodoTokenResponse = await getDodoToken()
+            dodoToken = DodoTokenRT.check(dodoTokenResponse)
+            logInfo(`Successfully received temporary DODO oauth token (expires in ${dodoToken.expires_in}s)`)
+          }
+
+          logWarn(`-> Canceling delivery for order ${order.identifier}. Latest time for confirmation ${latestConfirmationDate.toLocaleString('cs')} passed.`)
+          await cancelDodoOrder(order.identifier, dodoToken)
+          await updateOrderStatus(order.ref, OrderStatus.CANCELED)
+          logInfo(`-> Successfully canceled order ${order.identifier}`)
+        }
       }
 
       handledOrdersCount++
@@ -108,5 +126,20 @@ const updateOrderStatus = async (orderRef: DocumentReference, status: OrderStatu
     }
     ,
     { merge: true }
+  )
+}
+
+const cancelDodoOrder = async (orderIdentification: string, token: DodoToken): Promise<AxiosResponse<unknown>> => {
+  return await axios.put(
+    `${process.env.DODO_ORDERS_API}/${encodeURIComponent(orderIdentification)}/status`,
+    {
+      Status: 'Cancelled',
+      Reason: 'Delivery was not confirmed in time',
+      StatusChangeTime: new Date().toISOString()
+    },
+    {
+      headers: { Authorization: `Bearer ${token.access_token || ''}` },
+      timeout: 30000
+    }
   )
 }
