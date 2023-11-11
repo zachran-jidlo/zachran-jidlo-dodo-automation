@@ -27,7 +27,7 @@
   "homepage": "https://github.com/cesko-digital/zachran-jidlo-dodo-automation#readme",
   "dependencies": {
     "airtable": "^0.11.5",
-    "axios": "^0.27.2",
+    "axios": "^1.6.0",
     "dotenv": "^16.0.2",
     "firebase": "^10.3.0",
     "runtypes": "^6.6.0",
