@@ -2,7 +2,7 @@ name: Send orders to DODO
 
 on:
   push:
-    branches: [main]
+    branches: [main, specific_date_run]
   schedule:
   - cron: "0 7 * * 1-5"
 
