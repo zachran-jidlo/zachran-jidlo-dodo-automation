@@ -28,7 +28,7 @@ const getCharities = async (): Promise<unknown> => {
 }
 
 const getDateAfter7days = (addSeconds = 0): Date => {
-  const date = new Date(2024, 1, 28)
+  const date = new Date(2024, 1, 29)
   date.setDate(date.getDate())
   date.setUTCHours(0, 0, 0, 0)
   date.setUTCMinutes(date.getTimezoneOffset())
