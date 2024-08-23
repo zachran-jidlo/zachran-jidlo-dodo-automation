@@ -208,6 +208,7 @@ const handleOrders = async (ordersData: {id: string}[]): Promise<number> => {
 
 export const checkOrders = async () => {
   try {
+    console.info(`Secured dodo api? "${process.env.DODO_ORDERS_API.startsWith('https')}"`)
     console.info(`Loading orders from "${AIRTABLES.ORDERS}" table`)
     const ordersResponse = await getOrders()
     const { records: ordersData, offset } = Record({ records: ArrayRT(Record({ id: String })), offset: Optional(String) }).check(ordersResponse)
